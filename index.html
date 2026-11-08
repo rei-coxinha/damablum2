@@ -179,6 +179,7 @@ body.adm{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMa
 .adm .row b.low{color:var(--red);background:#e5484d1f;padding:3px 10px;border-radius:999px;font-size:13px;animation:blink 1s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
 .adm .lowtag{color:var(--red)!important;font-weight:600}
+.adm .seg button{font-size:12px;padding:7px 2px}
 </style>
 </head>
 <body class="adm">
@@ -228,13 +229,14 @@ async function go(t){tab=t||tab;$('ttl').textContent=TT[tab];document.querySelec
 document.querySelectorAll('.bnav button').forEach(b=>b.onclick=()=>{if(navigator.vibrate)navigator.vibrate(8);go(b.dataset.t);scrollTo(0,0)});
 const loadProducts=async()=>{products=await api('/rest/v1/products?select=*&order=sort_order,name')};
 /* resumo */
-async function vResumo(){const from=sod({hoje:0,'7':6,'30':29}[range]);
+const RG={hoje:[0,null],ontem:[1,0],antes:[2,1],'7':[6,null],'15':[14,null]};
+async function vResumo(){const[ra,rb]=RG[range]||RG.hoje,from=sod(ra),upS=rb===null?'':'&created_at=lt.'+sod(rb),upI=rb===null?'':'&sales.created_at=lt.'+sod(rb);
  const[S,I,T]=await Promise.all([
-  api('/rest/v1/sales?select=id,no,total,method,created_at,operator&created_at=gte.'+from+'&order=created_at.desc&limit=1000'),
-  api('/rest/v1/sale_items?select=name,qty,price,sales!inner(no,created_at,method)&sales.created_at=gte.'+from+'&limit=5000'),
+  api('/rest/v1/sales?select=id,no,total,method,created_at,operator&created_at=gte.'+from+upS+'&order=created_at.desc&limit=1000'),
+  api('/rest/v1/sale_items?select=name,qty,price,sales!inner(no,created_at,method)&sales.created_at=gte.'+from+upI+'&limit=5000'),
   api('/rest/v1/cash_sessions?select=*&order=opened_at.desc&limit=10')]);
  const sum=m=>S.reduce((t,x)=>t+(payParts(x)[m]||0),0),tot=S.reduce((t,x)=>t+Number(x.total),0);items=I;
-  $('v').innerHTML=`<div class="seg">${[['hoje','Hoje'],['7','7 dias'],['30','30 dias']].map(([k,l])=>`<button class="${k===range?'on':''}" onclick="range='${k}';go()">${l}</button>`).join('')}</div>
+  $('v').innerHTML=`<div class="seg">${[['hoje','Hoje'],['ontem','Ontem'],['antes','Anteontem'],['7','7 dias'],['15','15 dias']].map(([k,l])=>`<button class="${k===range?'on':''}" onclick="range='${k}';go()">${l}</button>`).join('')}</div>
  <div class="card"><div class="stats"><div class="stat hero"><small>Faturamento</small><strong>${money(tot)}</strong></div><div class="stat"><small>Vendas</small><strong>${S.length}</strong></div><div class="stat"><small>Dinheiro</small><strong>${money(sum('Dinheiro'))}</strong></div><div class="stat"><small>Pix</small><strong>${money(sum('Pix'))}</strong></div><div class="stat"><small>Cartão</small><strong>${money(sum('Cartão'))}</strong></div></div></div>
  <div class="card"><h3>Caixas (turnos)</h3>${T.map(t=>`<div class="row"><div class="grow"><b>${esc(t.operator)}</b><small>Abertura de caixa · ${money(t.opening)}</small><small>${fdt(t.opened_at)}</small></div>${t.closed_at?`<div style="text-align:right"><b>${money(Number(t.cash_total))}</b><small style="display:block">em dinheiro</small><small style="display:block;color:${t.diff<0?'var(--red)':'var(--mut)'}">${Number(t.diff)===0?'caixa bateu':(t.diff<0?'faltou ':'sobrou ')+money(Math.abs(t.diff))}</small></div>`:'<span class="badge">Aberto</span>'}</div>`).join('')||'<div class="empty">Nenhum caixa ainda.</div>'}</div>
  <button class="btn block" onclick="exportCsv()">Exportar vendas (CSV)</button>`}
