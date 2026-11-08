@@ -7,9 +7,14 @@ self.addEventListener('fetch',e=>{
  if(r.method!=='GET')return;
  const u=new URL(r.url);
  if(u.origin!==location.origin)return; // Supabase e outros: sempre direto na rede
+ // PWA antigo do admin abria adm.html: se esse arquivo não existe mais, manda para admin.html
+ if(r.mode==='navigate'&&/\/adm\.html$/i.test(u.pathname)){
+  e.respondWith(fetch(r,{cache:'no-store'}).then(res=>res.ok?res:Response.redirect(new URL('admin.html',self.registration.scope).href,302)).catch(()=>caches.match('./admin.html')));
+  return;
+ }
  if(r.mode==='navigate'||u.pathname.endsWith('.html')){
   // páginas: sempre busca a versão nova na internet (ignora o cache do navegador); sem internet, usa a guardada
-  e.respondWith(fetch(r,{cache:'no-store'}).then(res=>{if(res.ok){const c=res.clone();caches.open(V).then(x=>x.put(r,c))}return res}).catch(()=>caches.match(r).then(m=>m||caches.match(u.pathname.includes('admin')?'./admin.html':'./index.html'))));
+  e.respondWith(fetch(r,{cache:'no-store'}).then(res=>{if(res.ok){const c=res.clone();caches.open(V).then(x=>x.put(r,c))}return res}).catch(()=>caches.match(r).then(m=>m||caches.match(u.pathname.includes('adm')?'./admin.html':'./index.html'))));
   return;
  }
  // ícones e manifestos: usa o guardado e atualiza em segundo plano
