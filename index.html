@@ -273,7 +273,10 @@ async function vMais(){const[s,t]=await Promise.all([api('/rest/v1/shop_settings
  <div class="card"><h3>Equipe</h3>${t.map(u=>`<div class="row"><div class="grow"><b>${esc(u.email||'')}</b></div><select onchange="setRole('${u.id}',this.value)" >${['pendente','caixa','admin'].map(r=>`<option ${r===u.role?'selected':''}>${r}</option>`).join('')}</select></div>`).join('')}<small>Usuário novo entra como "pendente" até você liberar aqui. "caixa" só usa a frente de caixa.</small></div>`}
 const saveShop=()=>act(async()=>{await api('/rest/v1/shop_settings?id=eq.1',{m:'PATCH',b:{name:$('shN').value.trim()||'Caldo de Cana do Damablo',line:$('shL').value.trim(),footer:$('shF').value.trim()}});toast('Nota atualizada','ok')});
 const setRole=(id,role)=>act(async()=>{await api('/rest/v1/profiles?id=eq.'+id,{m:'PATCH',b:{role}});toast('Permissão atualizada','ok')});
-if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator&&location.protocol!=='file:'){
+ const had=!!navigator.serviceWorker.controller;let rl=false;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!had||rl)return;rl=true;location.reload()});
+ navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),60000)}).catch(()=>{})}
 go('resumo');
 </script>
 </body>
