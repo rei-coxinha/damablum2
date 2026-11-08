@@ -1,4 +1,4 @@
-const V='damablo-v2';
+const V='damablo-v3';
 const SHELL=['./index.html','./admin.html','./manifest.webmanifest','./manifest-admin.webmanifest','./icon-192.png','./icon-512.png','./icon-180.png','./icon-admin-192.png','./icon-admin-512.png','./icon-admin-180.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>Promise.all(SHELL.map(u=>fetch(u,{cache:'reload'}).then(r=>r.ok&&c.put(u,r)).catch(()=>{})))).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
